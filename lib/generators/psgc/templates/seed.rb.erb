@@ -1,0 +1,31 @@
+# frozen_string_literal: true
+
+require "psgc"
+
+# Auto-generated seed file for PSGC geographic data
+# Run with: rails db:seed
+#
+# Model names can be customized via generator options:
+#   rails g psgc:seed --region-model=Address::Region --province-model=PsgcProvince
+
+<% if level == "all" || level == "regions" -%>
+# Regions (<%= Psgc.regions.length %>)
+<%= region_model %>.upsert_all(Psgc.regions, unique_by: :code)
+<% end -%>
+
+<% if level == "all" || level == "provinces" -%>
+# Provinces (<%= Psgc.provinces.length %>)
+<%= province_model %>.upsert_all(Psgc.provinces, unique_by: :code)
+<% end -%>
+
+<% if level == "all" || level == "cities" || level == "cities_municipalities" -%>
+# Cities/Municipalities (<%= Psgc.cities_municipalities.length %>)
+<%= city_model %>.upsert_all(Psgc.cities_municipalities, unique_by: :code)
+<% end -%>
+
+<% if level == "all" || level == "barangays" -%>
+# Barangays (<%= Psgc.barangays.length %>)
+<%= barangay_model %>.upsert_all(Psgc.barangays, unique_by: :code)
+<% end -%>
+
+puts "PSGC seed data loaded successfully"
