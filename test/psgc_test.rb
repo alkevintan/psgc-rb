@@ -102,4 +102,36 @@ class PsgcTest < Minitest::Test
     assert_nil Psgc.hierarchy("123")
     assert_nil Psgc.hierarchy("abc")
   end
+
+  def test_search
+    result = Psgc.search("cebu")
+    assert_kind_of Hash, result
+    assert result[:provinces]
+    assert result[:cities_municipalities]
+    assert result[:barangays]
+    refute_empty result[:provinces]
+    assert result[:provinces].any? { |p| p[:name].downcase.include?("cebu") }
+  end
+
+  def test_search_with_limit
+    result = Psgc.search("san", limit: 2)
+    assert_equal 2, result[:barangays].length
+  end
+
+  def test_search_with_levels
+    result = Psgc.search("cebu", levels: [:provinces])
+    assert_equal 1, result.keys.length
+    assert result[:provinces]
+    assert_equal [:provinces], result.keys
+  end
+
+  def test_search_empty_query
+    assert_equal({}, Psgc.search(nil))
+    assert_equal({}, Psgc.search(""))
+    assert_equal({}, Psgc.search("   "))
+  end
+
+  def test_search_unknown_level
+    assert_raises(ArgumentError) { Psgc.search("test", levels: [:unknown]) }
+  end
 end

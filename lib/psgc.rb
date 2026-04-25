@@ -101,4 +101,32 @@ module Psgc
 
     result
   end
+
+  # @param query [String] search term (case-insensitive substring match)
+  # @param levels [Array<Symbol>] which levels to search (:regions, :provinces, :cities_municipalities, :barangays)
+  # @param limit [Integer] max matches per level (not total)
+  # @return [Hash{Symbol => Array}] hash with requested level keys and matching records
+  def self.search(query, levels: nil, limit: nil)
+    return {} unless query && !query.to_s.strip.empty?
+
+    query_down = query.to_s.downcase
+    levels ||= [:regions, :provinces, :cities_municipalities, :barangays]
+
+    result = {}
+    levels.each do |level|
+      collection = case level
+                   when :regions then regions
+                   when :provinces then provinces
+                   when :cities_municipalities then cities_municipalities
+                   when :barangays then barangays
+                   else raise ArgumentError, "unknown level: #{level}. Valid: :regions, :provinces, :cities_municipalities, :barangays"
+                   end
+
+      matches = collection.select { |item| item[:name].to_s.downcase.include?(query_down) }
+      matches = matches.first(limit) if limit
+      result[level] = matches
+    end
+
+    result
+  end
 end
