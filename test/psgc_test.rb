@@ -198,4 +198,78 @@ class PsgcTest < Minitest::Test
     refute_nil province
     assert_equal "14", province[:region_code]
   end
+
+  def test_export_csv_regions
+    csv = Psgc.export_csv(level: :regions)
+    assert_includes csv, "code"
+    assert_includes csv, "name"
+    assert_includes csv, "1300000000"
+    assert_includes csv, "National Capital Region"
+  end
+
+  def test_export_csv_provinces
+    csv = Psgc.export_csv(level: :provinces)
+    assert_includes csv, "1400100000"
+    assert_includes csv, "Abra"
+  end
+
+  def test_export_csv_cities
+    csv = Psgc.export_csv(level: :cities_municipalities)
+    assert_includes csv, "1403201000"
+    assert_includes csv, "Balbalan"
+  end
+
+  def test_export_csv_barangays
+    csv = Psgc.export_csv(level: :barangays)
+    assert_includes csv, "1403208016"
+    assert_includes csv, "Bagtayan"
+  end
+
+  def test_export_csv_default
+    csv = Psgc.export_csv
+    assert_includes csv, "National Capital Region"
+  end
+
+  def test_export_csv_no_headers
+    csv = Psgc.export_csv(level: :regions, include_headers: false)
+    refute_includes csv, "code"
+    assert_includes csv, "1300000000"
+  end
+
+  def test_export_csv_invalid_level
+    assert_raises(ArgumentError) { Psgc.export_csv(level: :invalid) }
+  end
+
+  def test_export_yaml_regions
+    yaml = Psgc.export_yaml(level: :regions)
+    assert_includes yaml, "regions:"
+    assert_includes yaml, "National Capital Region"
+  end
+
+  def test_export_yaml_provinces
+    yaml = Psgc.export_yaml(level: :provinces)
+    assert_includes yaml, "provinces:"
+    assert_includes yaml, "Abra"
+  end
+
+  def test_export_yaml_invalid_level
+    assert_raises(ArgumentError) { Psgc.export_yaml(level: :invalid) }
+  end
+
+  def test_export_geojson_barangays
+    geojson = Psgc.export_geojson(level: :barangays)
+    assert_includes geojson, "FeatureCollection"
+    assert_includes geojson, "Feature"
+    assert_includes geojson, "1403208016"
+  end
+
+  def test_export_geojson_regions
+    geojson = Psgc.export_geojson(level: :regions)
+    assert_includes geojson, "FeatureCollection"
+    assert_includes geojson, "National Capital Region"
+  end
+
+  def test_export_geojson_invalid_level
+    assert_raises(ArgumentError) { Psgc.export_geojson(level: :invalid) }
+  end
 end

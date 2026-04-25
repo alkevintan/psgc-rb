@@ -132,7 +132,7 @@ module Psgc
   end
 
   # @param query [String] search term (case-insensitive substring match)
-  # @param levels [Array<Symbol>] which levels to search (:regions, :provinces, :cities_municipalities, :barangays)
+  # @param levels [Array<Symbol>] which levels to search (:regions, :provinces, :cities, :cities_municipalities, :barangays)
   # @param limit [Integer] max matches per level (not total)
   # @return [Hash{Symbol => Array}] hash with requested level keys and matching records
   def self.search(query, levels: nil, limit: nil)
@@ -143,13 +143,7 @@ module Psgc
 
     result = {}
     levels.each do |level|
-      collection = case level
-                   when :regions then regions
-                   when :provinces then provinces
-                   when :cities_municipalities then cities_municipalities
-                   when :barangays then barangays
-                   else raise ArgumentError, "unknown level: #{level}. Valid: :regions, :provinces, :cities_municipalities, :barangays"
-                   end
+      collection = collection_for(level)
 
       matches = collection.select { |item| item[:name].to_s.downcase.include?(query_down) }
       matches = matches.first(limit) if limit
@@ -187,5 +181,69 @@ module Psgc
       cities_municipalities: cities_municipalities.length,
       barangays: barangays.length
     }
+  end
+
+  # @param level [Symbol] geographic level
+  # @return [Symbol] normalized level (:cities -> :cities_municipalities)
+  def self.normalize_level(level)
+    case level
+    when :cities then :cities_municipalities
+    else level
+    end
+  end
+
+  def self.collection_for(level)
+    normalized = normalize_level(level)
+
+    case normalized
+    when :regions then regions
+    when :provinces then provinces
+    when :cities_municipalities then cities_municipalities
+    when :barangays then barangays
+    else raise ArgumentError, "unknown level: #{level}. Valid: :regions, :provinces, :cities, :cities_municipalities, :barangays"
+    end
+  end
+
+  def self.export_csv(level: :regions, include_headers: true)
+    require "csv"
+    collection = collection_for(level)
+
+    headers = collection.first.keys.map(&:to_s)
+
+    CSV.generate do |csv|
+      csv << headers if include_headers
+      collection.each do |item|
+        csv << headers.map { |h| item[h.to_sym] }
+      end
+    end
+  end
+
+  def self.export_yaml(level: :regions)
+    require "yaml"
+    collection = collection_for(level)
+
+    { normalize_level(level) => collection }.to_yaml
+  end
+
+  # @return [String] GeoJSON FeatureCollection
+  # Note: geometry is null because PSGC data has no geographic coordinates.
+  def self.export_geojson(level: :regions)
+    collection = collection_for(level)
+
+    features = collection.map do |item|
+      props = item.dup
+      props.delete(:code)
+      {
+        type: "Feature",
+        id: item[:code],
+        geometry: nil,
+        properties: props
+      }
+    end
+
+    {
+      type: "FeatureCollection",
+      features: features
+    }.to_json
   end
 end

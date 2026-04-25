@@ -4,7 +4,7 @@ require "optparse"
 
 module Psgc
   class CLI
-    COMMANDS = %w[find hierarchy valid stats help].freeze
+    COMMANDS = %w[find hierarchy valid stats export help].freeze
 
     def self.run(argv = ARGV)
       new(argv).run
@@ -34,12 +34,18 @@ module Psgc
 
     def parse_options
       @options[:limit] = 20
+      @options[:export_format] = :csv
+      @options[:export_level] = :regions
 
       begin
         OptionParser.new do |opts|
           opts.on("-h", "--help") { @options[:help] = true }
           opts.on("--version") { @options[:version] = true }
           opts.on("--limit=N", Integer) { |n| @options[:limit] = n }
+          opts.on("--csv") { @options[:export_format] = :csv }
+          opts.on("--yaml") { @options[:export_format] = :yaml }
+          opts.on("--geojson") { @options[:export_format] = :geojson }
+          opts.on("--level=L") { |l| @options[:export_level] = l.to_sym }
         end.parse!(@argv)
       rescue OptionParser::InvalidOption => e
         $stderr.puts "Error: #{e.message}"
@@ -169,6 +175,31 @@ module Psgc
       @success = true
     end
 
+    def export
+      return help if @options[:help]
+      return version if @options[:version]
+
+      format = @options[:export_format]
+      level = @options[:export_level]
+
+      begin
+        case format
+        when :csv
+          puts Psgc.export_csv(level: level)
+        when :yaml
+          puts Psgc.export_yaml(level: level)
+        when :geojson
+          puts Psgc.export_geojson(level: level)
+        end
+      rescue ArgumentError => e
+        $stderr.puts "Error: #{e.message}"
+        @success = false
+        return
+      end
+
+      @success = true
+    end
+
     def help
       puts "Usage: psgc <command> [options]"
       puts ""
@@ -177,6 +208,7 @@ module Psgc
       puts "  hierarchy <code>   Show full hierarchy for a PSGC code"
       puts "  valid <code>       Check if PSGC code exists"
       puts "  stats              Show statistics"
+      puts "  export             Export data in various formats (CSV, YAML, GeoJSON)"
       puts ""
       puts "Run 'psgc <command> --help' for more details."
       @success = true

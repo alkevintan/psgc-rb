@@ -72,4 +72,51 @@ class CLITest < Minitest::Test
     assert status.success?, "Expected success"
     assert_includes stdout, "psgc-rb"
   end
+
+  def test_export_csv_default
+    stdout, _stderr, status = run_cli("export", "--csv")
+    assert status.success?, "Expected success"
+    assert_includes stdout, "code,name"
+  end
+
+  def test_export_csv_level
+    stdout, _stderr, status = run_cli("export", "--csv", "--level=provinces")
+    assert status.success?, "Expected success"
+    assert_includes stdout, "Abra"
+  end
+
+  def test_export_yaml
+    stdout, _stderr, status = run_cli("export", "--yaml", "--level=barangays")
+    assert status.success?, "Expected success"
+    assert_includes stdout, "barangays:"
+  end
+
+  def test_export_geojson
+    stdout, _stderr, status = run_cli("export", "--geojson", "--level=barangays")
+    assert status.success?, "Expected success"
+    assert_includes stdout, "FeatureCollection"
+  end
+
+  def test_export_default
+    stdout, _stderr, status = run_cli("export", "--csv")
+    assert status.success?, "Expected success"
+    assert_includes stdout, "National Capital Region"
+  end
+
+  def test_export_invalid_level
+    _stdout, _stderr, status = run_cli("export", "--csv", "--level=foo")
+    refute status.success?, "Expected failure for invalid level"
+  end
+
+  def test_export_cities_alias
+    stdout, _stderr, status = run_cli("export", "--csv", "--level=cities")
+    assert status.success?, "Expected success for --level=cities"
+    assert_includes stdout, "1403201000"
+  end
+
+  def test_export_help
+    stdout, _stderr, status = run_cli("export", "--help")
+    assert status.success?, "Expected success"
+    assert_includes stdout, "Usage"
+  end
 end
