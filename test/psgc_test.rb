@@ -164,4 +164,38 @@ class PsgcTest < Minitest::Test
     assert result[:cities_municipalities] > 0
     assert result[:barangays] > 0
   end
+
+  def test_find_province_with_code_and_region_code_both_match
+    province = Psgc.find_province(code: "1400100000", region_code: "14")
+    refute_nil province
+    assert_equal "Abra", province[:name]
+  end
+
+  def test_find_province_with_code_and_region_code_mismatch
+    province = Psgc.find_province(code: "1400100000", region_code: "01")
+    assert_nil province
+  end
+
+  def test_find_province_with_name_and_region_code_both_match
+    province = Psgc.find_province(name: "Abra", region_code: "14")
+    refute_nil province
+    assert_equal "Abra", province[:name]
+  end
+
+  def test_find_barangay_with_code_and_city_code
+    barangay = Psgc.find_barangay(code: "1403208016", city_municipality_code: "140320")
+    refute_nil barangay
+    assert_equal "Bagtayan", barangay[:name]
+  end
+
+  def test_find_barangay_with_code_and_wrong_city_code
+    barangay = Psgc.find_barangay(code: "1403208016", city_municipality_code: "010101")
+    assert_nil barangay
+  end
+
+  def test_find_province_by_region_prefix
+    province = Psgc.find_province(region_code: "14")
+    refute_nil province
+    assert_equal "14", province[:region_code]
+  end
 end

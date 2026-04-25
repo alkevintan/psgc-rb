@@ -11,20 +11,22 @@ module Psgc
     File.expand_path("../../data", __FILE__)
   end
 
+  @data_mutex = Mutex.new
+
   def self.regions
-    @regions ||= load_data("regions")
+    @regions || @data_mutex.synchronize { @regions ||= load_data("regions") }
   end
 
   def self.provinces
-    @provinces ||= load_data("provinces")
+    @provinces || @data_mutex.synchronize { @provinces ||= load_data("provinces") }
   end
 
   def self.cities_municipalities
-    @cities_municipalities ||= load_data("cities_municipalities")
+    @cities_municipalities || @data_mutex.synchronize { @cities_municipalities ||= load_data("cities_municipalities") }
   end
 
   def self.barangays
-    @barangays ||= load_data("barangays")
+    @barangays || @data_mutex.synchronize { @barangays ||= load_data("barangays") }
   end
 
   def self.load_data(type)
@@ -54,15 +56,42 @@ module Psgc
     find(barangays, code: code, name: name, city_municipality_code: city_municipality_code)
   end
 
+  # Finds first match in collection using AND semantics.
+  # All non-nil criteria must match for a result.
+  # Name matching is case-insensitive substring.
+  # Code attributes (*_code) use bidirectional prefix matching:
+  #   "v.start_with?(item[k]) || item[k].start_with?(v)"
+  #   e.g., region_code "14" matches stored "1400000000" and vice versa.
+  #
+  # @param collection [Array<Hash>] data collection
+  # @param code [String, nil] exact PSGC code
+  # @param name [String, nil] case-insensitive substring match
+  # @param attrs [Hash] additional match criteria
+  # @return [Hash, nil] first matching item or nil
   def self.find(collection, code: nil, name: nil, **attrs)
     collection.each do |item|
-      return item if code && item[:code] == code
-      return item if name && item[:name].to_s.downcase.include?(name.to_s.downcase)
-      attrs.each { |k, v| return item if item[k] == v && v }
+      matches = true
+      matches &&= item[:code] == code if code
+      matches &&= item[:name].to_s.downcase.include?(name.to_s.downcase) if name
+      attrs.each do |k, v|
+        next unless v
+        if k.to_s.end_with?("_code")
+          matches &&= v.to_s.start_with?(item[k].to_s) || item[k].to_s.start_with?(v.to_s)
+        else
+          matches &&= item[k] == v
+        end
+      end
+      return item if matches
     end
     nil
   end
 
+  # Traverses PSGC hierarchy for a given code.
+  # Uses prefix matching because parent codes are prefixes of child codes
+  # (e.g., city code is prefix of barangay code).
+  #
+  # @param code [String, Integer] 10-digit PSGC code
+  # @return [Hash{Symbol => Hash, nil}] hash with :code and found geographic levels
   def self.hierarchy(code)
     return nil unless code.to_s.match?(/^\d{10}$/)
     code = code.to_s
