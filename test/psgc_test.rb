@@ -151,4 +151,17 @@ class PsgcTest < Minitest::Test
     refute Psgc.valid?("abcdefghij")
     refute Psgc.valid?(" 1400000000 ")
   end
+
+  def test_stats
+    result = Psgc.stats
+    assert_kind_of Hash, result
+    assert_kind_of Integer, result[:regions]
+    assert_kind_of Integer, result[:provinces]
+    assert_kind_of Integer, result[:cities_municipalities]
+    assert_kind_of Integer, result[:barangays]
+    assert result[:regions] > 0
+    assert result[:provinces] > 0
+    assert result[:cities_municipalities] > 0
+    assert result[:barangays] > 0
+  end
 end

@@ -149,4 +149,14 @@ module Psgc
       barangays.any? { |b| b[:code] == code_str }
     end
   end
+
+  # @return [Hash{Symbol => Integer}] counts by level
+  def self.stats
+    {
+      regions: regions.length,
+      provinces: provinces.length,
+      cities_municipalities: cities_municipalities.length,
+      barangays: barangays.length
+    }
+  end
 end
