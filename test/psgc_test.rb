@@ -51,4 +51,55 @@ class PsgcTest < Minitest::Test
     refute_nil barangay
     assert_equal "Bagtayan", barangay[:name]
   end
+
+  def test_hierarchy_barangay
+    result = Psgc.hierarchy("1403208016")
+    refute_nil result
+    assert_equal "Bagtayan", result[:barangay][:name]
+    assert_equal "Balbalan", result[:city_municipality][:name]
+    assert_equal "Kalinga", result[:province][:name]
+    assert_equal "Cordillera Administrative Region (CAR)", result[:region][:name]
+  end
+
+  def test_hierarchy_province
+    result = Psgc.hierarchy("1403200000")
+    refute_nil result
+    assert_equal "Kalinga", result[:province][:name]
+    assert_equal "Cordillera Administrative Region (CAR)", result[:region][:name]
+  end
+
+  def test_hierarchy_city
+    result = Psgc.hierarchy("1403201000")
+    refute_nil result
+    assert_equal "Balbalan", result[:city_municipality][:name]
+    assert_equal "Kalinga", result[:province][:name]
+    assert_equal "Cordillera Administrative Region (CAR)", result[:region][:name]
+  end
+
+  def test_hierarchy_region
+    result = Psgc.hierarchy("1400000000")
+    refute_nil result
+    assert_equal "Cordillera Administrative Region (CAR)", result[:region][:name]
+  end
+
+  def test_hierarchy_huc
+    result = Psgc.hierarchy("1380100000")
+    refute_nil result
+    assert_equal "City of Caloocan", result[:city_municipality][:name]
+    assert_equal "National Capital Region (NCR)", result[:region][:name]
+  end
+
+  def test_hierarchy_ncr_barangay
+    result = Psgc.hierarchy("1380100001")
+    refute_nil result
+    assert_equal "City of Caloocan", result[:city_municipality][:name]
+    assert_equal "National Capital Region (NCR)", result[:region][:name]
+  end
+
+  def test_hierarchy_invalid_inputs
+    assert_nil Psgc.hierarchy(nil)
+    assert_nil Psgc.hierarchy("")
+    assert_nil Psgc.hierarchy("123")
+    assert_nil Psgc.hierarchy("abc")
+  end
 end

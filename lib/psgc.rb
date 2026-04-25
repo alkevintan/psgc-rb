@@ -62,4 +62,43 @@ module Psgc
     end
     nil
   end
+
+  def self.hierarchy(code)
+    return nil unless code.to_s.match?(/^\d{10}$/)
+    code = code.to_s
+
+    result = { code: code }
+
+    if code.end_with?("000000")
+      result[:region] = find_region(code: code)
+    elsif code.end_with?("0000")
+      result[:province] = find_province(code: code)
+      result[:city_municipality] = find_city_municipality(code: code) unless result[:province]
+    elsif code.end_with?("00")
+      result[:city_municipality] = find_city_municipality(code: code)
+    else
+      result[:barangay] = find_barangay(code: code)
+    end
+
+    if result[:barangay]
+      city = cities_municipalities.find { |c| c[:code].start_with?(result[:barangay][:city_municipality_code]) }
+      result[:city_municipality] = city
+      if city
+        province = provinces.find { |p| p[:code].start_with?(city[:province_code]) }
+        result[:province] = province
+      end
+    elsif result[:city_municipality]
+      province = provinces.find { |p| p[:code].start_with?(result[:city_municipality][:province_code]) }
+      result[:province] = province
+    end
+
+    if result[:province]
+      region = regions.find { |r| r[:code].start_with?(result[:province][:region_code]) }
+      result[:region] = region
+    end
+
+    result[:region] ||= regions.find { |r| r[:code].start_with?(code[0, 2]) }
+
+    result
+  end
 end
