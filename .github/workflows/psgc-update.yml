@@ -1,0 +1,74 @@
+name: PSGC update reminder
+
+# Quarterly nudge to check PSA for a new PSGC release.
+#
+# Why monitor-only: PSA's classification page and the publication
+# xlsx URLs at /system/files/scd/ both return 403 from GitHub
+# Actions runners (Cloudflare gates by datacenter ASN reputation,
+# regardless of TLS fingerprint or path). Verified across plain
+# urllib, cloudscraper, and curl_cffi (Chrome impersonation) on
+# 12 candidate URLs spanning 2025-2027 — every one 403'd.
+#
+# Why quarterly: PSA publishes a new PSGC at most once per quarter,
+# typically a few weeks after the quarter closes. Cron fires on the
+# 1st of Feb/May/Aug/Nov — roughly one month after each quarter
+# close, leaving PSA time to publish before the reminder lands.
+
+on:
+  schedule:
+    - cron: "0 0 1 2,5,8,11 *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'PSGC: check PSA for a new release';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              'Quarterly reminder to check the PSA classification page for a new PSGC release.',
+              '',
+              'Source: https://psa.gov.ph/classification/psgc/',
+              '',
+              '## If a new release is published',
+              '',
+              '1. Download the **Publication** xlsx from the PSA page.',
+              '2. Save it under `data/` (any filename works).',
+              '3. `bundle exec rake "data:parse[data/<your-file>.xlsx]"`',
+              '4. Delete the xlsx (`rm data/<your-file>.xlsx`).',
+              '5. Commit `data/*.json` and open a PR.',
+              '6. After merge, cut a gem release separately.',
+              '7. Close this issue.',
+              '',
+              '## If nothing new',
+              '',
+              'Close this issue. The next quarterly cron will reopen one if needed.',
+              '',
+              '---',
+              `Workflow run: ${runUrl}`,
+            ].join('\n');
+
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'psgc-update',
+            });
+            if (existing.data.find(i => i.title === title)) {
+              core.info('Open reminder issue already exists; skipping create.');
+              return;
+            }
+            const created = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['psgc-update'],
+            });
+            core.notice(`Opened reminder issue #${created.data.number}`);
