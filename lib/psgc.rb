@@ -129,4 +129,24 @@ module Psgc
 
     result
   end
+
+  # @param code [String, Integer] 10-digit PSGC code
+  # @return [Boolean] true if code exists in any level
+  def self.valid?(code)
+    return false unless code && code.to_s.match?(/^\d{10}$/)
+
+    code_str = code.to_s
+
+    if code_str.end_with?("000000")
+      regions.any? { |r| r[:code] == code_str }
+    elsif code_str.end_with?("0000")
+      provinces.any? { |p| p[:code] == code_str } ||
+        cities_municipalities.any? { |c| c[:code] == code_str }
+    elsif code_str.end_with?("00")
+      cities_municipalities.any? { |c| c[:code] == code_str } ||
+        barangays.any? { |b| b[:code] == code_str }
+    else
+      barangays.any? { |b| b[:code] == code_str }
+    end
+  end
 end

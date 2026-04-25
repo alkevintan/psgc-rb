@@ -134,4 +134,21 @@ class PsgcTest < Minitest::Test
   def test_search_unknown_level
     assert_raises(ArgumentError) { Psgc.search("test", levels: [:unknown]) }
   end
+
+  def test_valid
+    assert Psgc.valid?(Psgc.regions.first[:code])
+    assert Psgc.valid?(Psgc.provinces.first[:code])
+    assert Psgc.valid?(Psgc.cities_municipalities.first[:code])
+    assert Psgc.valid?(Psgc.barangays.first[:code])
+    assert Psgc.valid?(1400000000)
+  end
+
+  def test_valid_invalid
+    refute Psgc.valid?("9999999999")
+    refute Psgc.valid?(nil)
+    refute Psgc.valid?("")
+    refute Psgc.valid?("123")
+    refute Psgc.valid?("abcdefghij")
+    refute Psgc.valid?(" 1400000000 ")
+  end
 end
