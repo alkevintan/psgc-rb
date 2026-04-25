@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name = "psgc-rb"
-  spec.version = "0.1.0"
+  spec.version = "0.2.0"
   spec.authors = ["Al Kevin Tan"]
   spec.email = ["alkevintan@gmail.com"]
 
@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 3.2.0"
   spec.metadata["allowed_push_host"] = "https://rubygems.org"
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = spec.homepage
+  spec.metadata["source_code_uri"] = "#{spec.homepage}/tree/v#{spec.version}"
 
   spec.add_dependency "csv", ">= 2.0.0"
   spec.add_dependency "psych", ">= 4.0.0"
