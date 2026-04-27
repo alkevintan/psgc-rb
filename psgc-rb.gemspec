@@ -9,6 +9,7 @@ Gem::Specification.new do |spec|
   spec.summary = "Philippine Standard Geographic Codes (PSGC) - Regions, Provinces, Cities, Municipalities, Barangays"
   spec.description = "A Ruby gem providing up-to-date Philippine geographic data from the PSA. Includes all regions, provinces, cities, municipalities, and barangays with PSGC codes."
   spec.homepage = "https://github.com/alkevintan/psgc-rb"
+  spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
   spec.metadata["allowed_push_host"] = "https://rubygems.org"
   spec.metadata["homepage_uri"] = spec.homepage
